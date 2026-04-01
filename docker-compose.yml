@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  peter-backend:
+    build: .
+    container_name: ai-in-peter-backend
+    ports:
+      - "8765:8765"
+    env_file:
+      - .env
+    volumes:
+      - peter-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  peter-data:
