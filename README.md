@@ -613,6 +613,8 @@ SELECT
 FROM hands
 ```
 
+<a href="https://freeimage.host/"><img src="https://iili.io/Bfw1tb1.png" alt="Bfw1tb1.png" border="0" /></a>
+
 ### Hand Replay
 
 Browse, search, and filter past hands with full agent reasoning preserved. Available filters:
