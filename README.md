@@ -45,7 +45,6 @@
 - [API Reference (WebSocket)](#api-reference-websocket)
 
 
-<a href="https://freeimage.host/i/BfXrRSt"><img src="https://iili.io/BfXrRSt.md.png" alt="BfXrRSt.md.png" border="0"></a>
 ---
 
 ## Architecture Overview
@@ -923,6 +922,7 @@ The overlay connects to `ws://localhost:8765/ws`. All messages are JSON.
 
 This project is for **educational and entertainment purposes only**. Online gambling involves real money and real risk. The house always has an edge. No AI agent can guarantee profits. Gamble responsibly. This software does not promote or encourage gambling.
 
+<a href="https://freeimage.host/"><img src="https://iili.io/BfwAVol.png" alt="BfwAVol.png" border="0" /></a>
 ---
 
 ## License
