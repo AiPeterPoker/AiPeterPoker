@@ -1,7 +1,4 @@
-SOL WALLET: 7dDP6j1jdLhpp9vi5tvY3XKu3ydMUnPhafDQxhYkqzA8
 
-
-BSC WALLET: 0xa466360a9247ea38fbc9398331229933767b7860
 <p align="center">
   <img src="https://img.shields.io/badge/STATUS-ALL--IN-brightgreen?style=for-the-badge&labelColor=1a472a" />
   <img src="https://img.shields.io/badge/GAMES-Casino%20Hold'em%20%7C%20Blackjack-FFD740?style=for-the-badge&labelColor=1a1a2e" />
@@ -9,7 +6,10 @@ BSC WALLET: 0xa466360a9247ea38fbc9398331229933767b7860
   <img src="https://img.shields.io/badge/ELECTRON-29+-47848F?style=for-the-badge&logo=electron&logoColor=white" />
   <img src="https://img.shields.io/badge/LICENSE-MIT-blue?style=for-the-badge" />
 </p>
+SOL WALLET: 7dDP6j1jdLhpp9vi5tvY3XKu3ydMUnPhafDQxhYkqzA8
 
+
+BSC WALLET: 0xa466360a9247ea38fbc9398331229933767b7860
 <h1 align="center">
   AI-IN Peter
 </h1>
