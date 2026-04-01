@@ -41,7 +41,7 @@
 - [Quick Start](#quick-start)
 - [Configuration](#configuration-env)
 - [API Reference (WebSocket)](#api-reference-websocket)
-
+<a href="https://freeimage.host/i/BfXrRSt"><img src="https://iili.io/BfXrRSt.md.png" alt="BfXrRSt.md.png" border="0"></a>
 ---
 
 ## Architecture Overview
@@ -290,7 +290,7 @@ Balance region --> Grayscale --> Threshold --> Template match digits --> Parse n
 Pre-learned digit templates are stored in `digit_templates.json` and matched against the Pragmatic Play font.
 
 ---
-
+<a href="https://freeimage.host/"><img src="https://iili.io/BfhqWrl.png" alt="BfhqWrl.png" border="0" /></a>
 ## Decision Engine
 
 ### Casino Hold'em: 4-Tier Strategy
