@@ -6,10 +6,7 @@
   <img src="https://img.shields.io/badge/ELECTRON-29+-47848F?style=for-the-badge&logo=electron&logoColor=white" />
   <img src="https://img.shields.io/badge/LICENSE-MIT-blue?style=for-the-badge" />
 </p>
-SOL WALLET: 7dDP6j1jdLhpp9vi5tvY3XKu3ydMUnPhafDQxhYkqzA8
 
-
-BSC WALLET: 0xa466360a9247ea38fbc9398331229933767b7860
 <h1 align="center">
   AI-IN Peter
 </h1>
@@ -25,6 +22,11 @@ BSC WALLET: 0xa466360a9247ea38fbc9398331229933767b7860
 <p align="center">
   <strong>AI-IN</strong> = <em>All-In</em> meets <em>AI-In</em>. The name says it all.
 </p>
+
+SOL WALLET: 7dDP6j1jdLhpp9vi5tvY3XKu3ydMUnPhafDQxhYkqzA8
+
+
+BSC WALLET: 0xa466360a9247ea38fbc9398331229933767b7860
 
 <a href="https://freeimage.host/"><img src="https://iili.io/BfwnD4s.png" alt="BfwnD4s.png" border="0" /></a>
 
