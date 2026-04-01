@@ -419,7 +419,7 @@ The engine pre-estimates dealer qualification probability based on board texture
 | Default | 55% |
 
 ---
-<a href="https://freeimage.host/"><img src="https://iili.io/BfNK50v.png" alt="BfNK50v.png" border="0" /></a>
+<a href="https://freeimage.host/"><img src="https://iili.io/BfN1P3v.png" alt="BfN1P3v.png" border="0" /></a>
 
 ## Agent Personality System
 
