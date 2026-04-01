@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI-IN Peter — AI Poker Agent for Casino Hold'em</title>
+<meta name="description" content="Open-source AI poker agent with transparent overlay, GTO strategy, Monte Carlo engine, and Peter Griffin's overconfident personality. Built for streaming.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#070510;--bg2:#0e0b1a;--bg3:#161225;--green:#4CAF50;--green-d:rgba(76,175,80,0.12);--yellow:#FFD740;--yellow-d:rgba(255,215,64,0.12);--red:#FF5252;--blue:#42A5F5;--purple:#9146FF;--beer:#D4A017;--txt:#e8ecf1;--txt2:rgba(255,255,255,0.55);--txt3:rgba(255,255,255,0.3);--mono:'JetBrains Mono',monospace;--sans:'Space Grotesk',system-ui,sans-serif}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--txt);font-family:var(--sans);line-height:1.6;overflow-x:hidden}
+a{color:var(--green);text-decoration:none}
+a:hover{text-decoration:underline}
+
+.container{max-width:1100px;margin:0 auto;padding:0 24px}
+
+/* Hero */
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-200px;right:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(76,175,80,0.08) 0%,transparent 70%);pointer-events:none}
+.hero::after{content:'';position:absolute;bottom:-100px;left:-100px;width:400px;height:400px;background:radial-gradient(circle,rgba(145,70,255,0.06) 0%,transparent 70%);pointer-events:none}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;border-radius:20px;background:var(--green-d);border:1px solid rgba(76,175,80,0.2);font-size:13px;color:var(--green);font-weight:500;margin-bottom:24px}
+.hero-badge span{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.hero h1{font-size:clamp(42px,8vw,80px);font-weight:700;line-height:1.05;letter-spacing:-2px;margin-bottom:16px}
+.hero h1 em{font-style:normal;color:var(--green)}
+.hero-sub{font-size:clamp(16px,2.5vw,22px);color:var(--txt2);max-width:640px;line-height:1.5;margin-bottom:32px}
+.hero-quote{font-size:15px;color:var(--beer);font-style:italic;padding:12px 20px;border-left:3px solid var(--beer);background:rgba(212,160,23,0.05);border-radius:0 8px 8px 0;max-width:520px;margin-bottom:40px;line-height:1.6}
+.hero-actions{display:flex;gap:12px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:600;font-family:var(--sans);border:none;cursor:pointer;transition:all .2s}
+.btn-primary{background:var(--green);color:#0a0c10}
+.btn-primary:hover{filter:brightness(1.15);text-decoration:none;transform:translateY(-1px)}
+.btn-secondary{background:rgba(255,255,255,0.06);color:var(--txt);border:1px solid rgba(255,255,255,0.1)}
+.btn-secondary:hover{background:rgba(255,255,255,0.1);text-decoration:none;transform:translateY(-1px)}
+
+/* Features */
+.section{padding:100px 0}
+.section-label{font-size:12px;font-weight:600;color:var(--green);text-transform:uppercase;letter-spacing:2px;margin-bottom:12px}
+.section h2{font-size:clamp(28px,5vw,42px);font-weight:700;letter-spacing:-1px;margin-bottom:16px}
+.section-desc{font-size:17px;color:var(--txt2);max-width:560px;margin-bottom:48px}
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
+.feature-card{padding:28px;border-radius:14px;background:var(--bg2);border:1px solid rgba(255,255,255,0.04);transition:all .3s}
+.feature-card:hover{border-color:rgba(76,175,80,0.15);transform:translateY(-2px)}
+.feature-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;margin-bottom:16px}
+.feature-card h3{font-size:17px;font-weight:600;margin-bottom:8px}
+.feature-card p{font-size:14px;color:var(--txt2);line-height:1.6}
+
+/* Architecture */
+.arch-box{background:var(--bg2);border:1px solid rgba(255,255,255,0.04);border-radius:14px;padding:32px;font-family:var(--mono);font-size:13px;color:var(--txt2);line-height:1.7;overflow-x:auto;white-space:pre}
+
+/* Personality */
+.persona-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.persona{padding:24px;border-radius:12px;background:var(--bg2);border:1px solid rgba(255,255,255,0.04);text-align:center}
+.persona.active{border-color:rgba(76,175,80,0.3);background:rgba(76,175,80,0.04)}
+.persona-name{font-size:16px;font-weight:700;margin-bottom:4px}
+.persona-desc{font-size:13px;color:var(--txt2);margin-bottom:12px}
+.persona-quote{font-size:12px;color:var(--beer);font-style:italic;padding:8px 12px;background:rgba(212,160,23,0.05);border-radius:6px;line-height:1.5}
+.persona-stats{display:flex;justify-content:center;gap:16px;margin-top:12px;font-size:11px;color:var(--txt3);font-family:var(--mono)}
+
+/* CTA */
+.cta{text-align:center;padding:80px 0 120px}
+.cta h2{font-size:clamp(28px,5vw,40px);font-weight:700;letter-spacing:-1px;margin-bottom:12px}
+.cta p{font-size:17px;color:var(--txt2);margin-bottom:32px}
+
+/* Footer */
+footer{border-top:1px solid rgba(255,255,255,0.04);padding:32px 0;text-align:center;font-size:13px;color:var(--txt3)}
+
+/* Terminal */
+.terminal{background:#0a0812;border:1px solid rgba(255,255,255,0.06);border-radius:12px;overflow:hidden;margin-top:48px}
+.terminal-bar{display:flex;align-items:center;gap:6px;padding:10px 16px;background:rgba(255,255,255,0.03);border-bottom:1px solid rgba(255,255,255,0.04)}
+.terminal-dot{width:10px;height:10px;border-radius:50%}
+.terminal-body{padding:20px;font-family:var(--mono);font-size:13px;line-height:1.8;color:var(--txt2)}
+.terminal-body .cmd{color:var(--green)}
+.terminal-body .comment{color:var(--txt3)}
+.terminal-body .output{color:var(--txt2)}
+
+@media(max-width:768px){
+  .persona-grid{grid-template-columns:1fr}
+  .features-grid{grid-template-columns:1fr}
+  .hero-actions{flex-direction:column}
+  .btn{width:100%;justify-content:center}
+}
+</style>
+</head>
+<body>
+
+<!-- Hero -->
+<section class="hero">
+<div class="container">
+  <div class="hero-badge"><span></span> Open source — MIT license</div>
+  <h1><em>AI-IN</em> Peter</h1>
+  <p class="hero-sub">An AI poker agent for Casino Hold'em that commits fully when the math supports it. Monte Carlo equity, GTO strategy, and the overconfident swagger of a certain Quahog resident.</p>
+  <div class="hero-quote">"Holy crap, Lois! The math says we're golden. I'm goin' AI-IN."</div>
+  <div class="hero-actions">
+    <a href="https://github.com/ai-in-peter/ai-in-peter" class="btn btn-primary">View on GitHub</a>
+    <a href="#quickstart" class="btn btn-secondary">Quick Start</a>
+  </div>
+</div>
+</section>
+
+<!-- Features -->
+<section class="section" id="features">
+<div class="container">
+  <div class="section-label">Features</div>
+  <h2>Math-driven decisions.<br>Peter-level confidence.</h2>
+  <p class="section-desc">Every component is designed for transparency and entertainment — perfect for streaming on Twitch or YouTube.</p>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon" style="background:var(--green-d);color:var(--green)">MC</div>
+      <h3>Monte Carlo engine</h3>
+      <p>10,000+ simulated runouts per hand. Full hand evaluation from royal flush to high card. Calculates equity, outs, and hand strength in real-time.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:var(--yellow-d);color:var(--yellow)">GT</div>
+      <h3>GTO strategy</h3>
+      <p>Pre-computed Game Theory Optimal tables for Casino Hold'em. Pre-flop categorization and post-flop strength tiers. Configurable strictness from pure GTO to gut-driven.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(66,165,245,0.12);color:var(--blue)">AI</div>
+      <h3>AI vision</h3>
+      <p>Screenshots the browser and uses Claude or GPT-4o to read the table. Detects cards, pot size, buttons, and game phase automatically.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(145,70,255,0.12);color:var(--purple)">TV</div>
+      <h3>Twitch integration</h3>
+      <p>Chat votes on decisions in real-time. Viewers type !fold, !call, or !raise. Results show in the overlay. Democracy mode for maximum entertainment.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(212,160,23,0.12);color:var(--beer)">PG</div>
+      <h3>Peter's personality</h3>
+      <p>Three personality modes: Overconfident, Cautious, and Degenerate. Each changes the console commentary, risk tolerance, and quip style. The math stays the same.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(255,82,82,0.12);color:var(--red)">K$</div>
+      <h3>Kelly criterion sizing</h3>
+      <p>Automatic bet sizing based on edge and bankroll. Fractional Kelly for safety. Peter might be reckless, but the math isn't.</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- Personality -->
+<section class="section" style="background:var(--bg2)">
+<div class="container">
+  <div class="section-label">Personality system</div>
+  <h2>Three modes. Same math.<br>Different vibes.</h2>
+  <p class="section-desc">The personality only affects the console commentary and risk tolerance. The core decision engine stays mathematically optimal.</p>
+
+  <div class="persona-grid">
+    <div class="persona active">
+      <div class="persona-name" style="color:var(--green)">Overconfident</div>
+      <div class="persona-desc">Default mode. Trash talk + cold math.</div>
+      <div class="persona-quote">"The dealer doesn't know I've got 10,000 Monte Carlo sims backing me up."</div>
+      <div class="persona-stats"><span>GTO: 80%</span><span>Risk: Med</span><span>Kelly: 25%</span></div>
+    </div>
+    <div class="persona">
+      <div class="persona-name" style="color:var(--blue)">Cautious</div>
+      <div class="persona-desc">Nervous Peter. Strict GTO adherence.</div>
+      <div class="persona-quote">"I don't know, guys... the variance on this hand makes me uncomfortable."</div>
+      <div class="persona-stats"><span>GTO: 95%</span><span>Risk: Low</span><span>Kelly: 15%</span></div>
+    </div>
+    <div class="persona">
+      <div class="persona-name" style="color:var(--red)">Degenerate</div>
+      <div class="persona-desc">Full Peter. Gut-driven commentary.</div>
+      <div class="persona-quote">"Kelly criterion? More like Kelly WHO? I'm going full send!"</div>
+      <div class="persona-stats"><span>GTO: 40%</span><span>Risk: High</span><span>Kelly: 50%</span></div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- Quick Start -->
+<section class="section" id="quickstart">
+<div class="container">
+  <div class="section-label">Get started</div>
+  <h2>Deploy your own Peter<br>in 3 minutes.</h2>
+  <p class="section-desc">Clone the repo, add your API key, and start. Peter runs locally on your machine — your keys never leave your computer.</p>
+
+  <div class="terminal">
+    <div class="terminal-bar">
+      <div class="terminal-dot" style="background:#FF5F56"></div>
+      <div class="terminal-dot" style="background:#FFBD2E"></div>
+      <div class="terminal-dot" style="background:#27C93F"></div>
+    </div>
+    <div class="terminal-body">
+<span class="comment"># Clone the repo</span>
+<span class="cmd">git clone</span> https://github.com/ai-in-peter/ai-in-peter.git
+<span class="cmd">cd</span> ai-in-peter
+
+<span class="comment"># Install everything</span>
+<span class="cmd">bash</span> scripts/setup.sh
+
+<span class="comment"># Add your API key</span>
+<span class="cmd">cp</span> .env.example .env
+<span class="cmd">nano</span> .env  <span class="comment"># Add ANTHROPIC_API_KEY or OPENAI_API_KEY</span>
+
+<span class="comment"># Launch Peter</span>
+<span class="cmd">npm start</span>
+
+<span class="output">🃏 AI-IN Peter — Starting...
+✅ Backend running on ws://localhost:8765
+✅ Electron overlay loaded
+✅ Peter is ready. Let's play some poker.</span>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+<div class="container">
+  <h2>The math doesn't lie.<br>Neither does Peter.</h2>
+  <p>Fork it. Customize it. Stream it. Make it your own.</p>
+  <div class="hero-actions" style="justify-content:center">
+    <a href="https://github.com/ai-in-peter/ai-in-peter" class="btn btn-primary">Star on GitHub</a>
+    <a href="https://github.com/ai-in-peter/ai-in-peter/issues" class="btn btn-secondary">Report an issue</a>
+  </div>
+</div>
+</section>
+
+<footer>
+<div class="container">
+  <p>AI-IN Peter is a fan/parody project for educational and entertainment purposes only.<br>
+  Family Guy and Peter Griffin are trademarks of 20th Television. Not affiliated with Fox, Disney, or Seth MacFarlane.<br>
+  <span style="margin-top:8px;display:inline-block">MIT License &middot; 2026</span></p>
+</div>
+</footer>
+
+</body>
+</html>

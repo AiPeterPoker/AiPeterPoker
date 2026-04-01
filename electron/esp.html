@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>ESP Overlay</title>
+  <style>
+    * { margin: 0; padding: 0; }
+    html, body { background: transparent; overflow: hidden; width: 100vw; height: 100vh; }
+    canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; }
+  </style>
+</head>
+<body>
+<canvas id="esp"></canvas>
+<script>
+const COLORS = {
+  player:  '#FF4444',   // rojo — nuestras cartas
+  mesa:    '#42A5F5',   // azul — cartas dealer/community
+  shoe:    '#E91E9E',   // rosa — card shoe
+  balance: '#9C27B0',   // violeta — balance
+  face:    '#4CAF50',   // verde — cara del dealer
+};
+
+const canvas = document.getElementById('esp');
+const ctx = canvas.getContext('2d');
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+function drawZone(x, y, w, h, color, label) {
+  const c = COLORS[color] || '#fff';
+
+  // Subtle dashed outline
+  ctx.setLineDash([6, 5]);
+  ctx.strokeStyle = c;
+  ctx.globalAlpha = 0.35;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, 5);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.globalAlpha = 1.0;
+
+  // Small label top-left
+  ctx.font = '600 9px "Segoe UI", system-ui, sans-serif';
+  const tw = ctx.measureText(label).width + 8;
+  ctx.fillStyle = c;
+  ctx.globalAlpha = 0.6;
+  ctx.beginPath();
+  ctx.roundRect(x, y - 14, tw, 13, [2, 2, 0, 0]);
+  ctx.fill();
+  ctx.globalAlpha = 1.0;
+  ctx.fillStyle = '#000';
+  ctx.fillText(label, x + 4, y - 4);
+}
+
+function drawFaceTracker(x, y, w, h) {
+  const c = COLORS.face;
+
+  // Circular tracker around face
+  const cx = x + w / 2;
+  const cy = y + h / 2;
+  const radius = Math.max(w, h) * 0.6;
+
+  // Outer ring (dashed)
+  ctx.setLineDash([4, 4]);
+  ctx.strokeStyle = c;
+  ctx.globalAlpha = 0.5;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius + 6, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.globalAlpha = 1.0;
+
+  // Inner ring (solid)
+  ctx.shadowColor = c;
+  ctx.shadowBlur = 10;
+  ctx.strokeStyle = c;
+  ctx.lineWidth = 1.5;
+  ctx.globalAlpha = 0.7;
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.globalAlpha = 1.0;
+
+  // Crosshair lines
+  const ch = 6;
+  ctx.strokeStyle = c;
+  ctx.lineWidth = 1;
+  ctx.globalAlpha = 0.6;
+  ctx.beginPath();
+  ctx.moveTo(cx - ch, cy); ctx.lineTo(cx + ch, cy);
+  ctx.moveTo(cx, cy - ch); ctx.lineTo(cx, cy + ch);
+  ctx.stroke();
+  ctx.globalAlpha = 1.0;
+
+  // Label
+  ctx.font = 'bold 8px "Segoe UI", system-ui, sans-serif';
+  const label = 'TRACKING';
+  const tw = ctx.measureText(label).width + 8;
+  ctx.fillStyle = c;
+  ctx.globalAlpha = 0.6;
+  ctx.beginPath();
+  ctx.roundRect(cx - tw / 2, y + h + 8, tw, 12, 2);
+  ctx.fill();
+  ctx.globalAlpha = 1.0;
+  ctx.fillStyle = '#fff';
+  ctx.fillText(label, cx - tw / 2 + 4, y + h + 17);
+}
+
+const SUIT_SYMBOLS = { h: '\u2665', d: '\u2666', s: '\u2660', c: '\u2663' };
+const SUIT_COLORS = { h: '#ff4444', d: '#4488ff', s: '#ffffff', c: '#ffffff' };
+
+function drawCard(x, y, w, h, color, face, cardName) {
+  const c = COLORS[color] || '#fff';
+  const isFaceDown = face === 'down';
+
+  // Glow
+  ctx.shadowColor = c;
+  ctx.shadowBlur = isFaceDown ? 6 : 14;
+  ctx.strokeStyle = c;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, 5);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Fill for face-down cards
+  if (isFaceDown) {
+    ctx.fillStyle = c;
+    ctx.globalAlpha = 0.08;
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, 5);
+    ctx.fill();
+    ctx.globalAlpha = 1.0;
+  }
+
+  // Corner brackets
+  const bLen = Math.min(10, w * 0.22, h * 0.12);
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 2;
+  ctx.shadowColor = c;
+  ctx.shadowBlur = 5;
+  ctx.beginPath();
+  ctx.moveTo(x, y + bLen); ctx.lineTo(x, y); ctx.lineTo(x + bLen, y);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x + w - bLen, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w, y + bLen);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x, y + h - bLen); ctx.lineTo(x, y + h); ctx.lineTo(x + bLen, y + h);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x + w - bLen, y + h); ctx.lineTo(x + w, y + h); ctx.lineTo(x + w, y + h - bLen);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Card name label (centered above the card)
+  if (cardName) {
+    const suit = cardName.slice(-1);
+    const rank = cardName.slice(0, -1);
+    const suitSym = SUIT_SYMBOLS[suit] || suit;
+    const suitColor = SUIT_COLORS[suit] || '#fff';
+    const displayText = rank + suitSym;
+
+    ctx.font = 'bold 13px "Segoe UI", system-ui, sans-serif';
+    const tw = ctx.measureText(displayText).width + 12;
+    const th = 20;
+    const lx = x + (w - tw) / 2;
+    const ly = y - th - 4;
+
+    // Background pill
+    ctx.fillStyle = 'rgba(0,0,0,0.85)';
+    ctx.shadowColor = c;
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.roundRect(lx, ly, tw, th, 4);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Border
+    ctx.strokeStyle = c;
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.6;
+    ctx.beginPath();
+    ctx.roundRect(lx, ly, tw, th, 4);
+    ctx.stroke();
+    ctx.globalAlpha = 1.0;
+
+    // Text
+    ctx.fillStyle = suitColor;
+    ctx.fillText(displayText, lx + 6, ly + 15);
+  } else if (isFaceDown) {
+    // Show "?" for face-down cards
+    ctx.font = 'bold 11px "Segoe UI", system-ui, sans-serif';
+    const tw = ctx.measureText('?').width + 10;
+    const lx = x + (w - tw) / 2;
+    const ly = y - 22;
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.beginPath();
+    ctx.roundRect(lx, ly, tw, 18, 3);
+    ctx.fill();
+    ctx.fillStyle = c;
+    ctx.globalAlpha = 0.6;
+    ctx.fillText('?', lx + 5, ly + 14);
+    ctx.globalAlpha = 1.0;
+  }
+}
+
+function draw(cards, screenW, screenH) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (!cards || !cards.length) return;
+
+  const sx = canvas.width / screenW;
+  const sy = canvas.height / screenH;
+
+  // Pass 1: face tracker
+  for (const c of cards) {
+    if (c.face !== 'tracker') continue;
+    drawFaceTracker(c.x * sx, c.y * sy, c.w * sx, c.h * sy);
+  }
+
+  // Pass 2: zone outlines
+  for (const c of cards) {
+    if (!c.is_zone) continue;
+    drawZone(c.x * sx, c.y * sy, c.w * sx, c.h * sy, c.zone, c.label);
+  }
+
+  // Pass 3: card boxes with names
+  for (const c of cards) {
+    if (c.is_zone || c.face === 'tracker') continue;
+    drawCard(c.x * sx, c.y * sy, c.w * sx, c.h * sy, c.zone, c.face || 'up', c.card_name || null);
+  }
+}
+
+let ws = null;
+function connect() {
+  ws = new WebSocket('ws://localhost:8765/ws');
+  ws.onopen = () => console.log('[ESP] Connected');
+  ws.onmessage = (e) => {
+    try {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'esp_boxes') {
+        draw(msg.payload.cards, msg.payload.screen_w, msg.payload.screen_h);
+      }
+    } catch (err) {}
+  };
+  ws.onclose = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setTimeout(connect, 2000);
+  };
+  ws.onerror = () => ws.close();
+}
+connect();
+</script>
+</body>
+</html>

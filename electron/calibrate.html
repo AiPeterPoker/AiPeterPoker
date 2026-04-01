@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>AI-IN Peter — Calibration</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100vw; height: 100vh; background: rgba(0,0,0,0.3); overflow: hidden; font-family: 'Segoe UI', system-ui, sans-serif; color: #fff; }
+
+.zone {
+  position: absolute;
+  border: 2px dashed;
+  border-radius: 6px;
+  cursor: move;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  min-height: 30px;
+}
+.zone .label {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 3px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.zone .handle {
+  position: absolute;
+  bottom: -6px;
+  right: -6px;
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border-radius: 3px;
+  cursor: nwse-resize;
+  border: 2px solid;
+}
+.zone .coords {
+  font-size: 9px;
+  opacity: 0.7;
+  font-family: monospace;
+  pointer-events: none;
+  margin-top: 2px;
+}
+
+#toolbar {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(10,8,18,0.95);
+  border: 1px solid rgba(76,175,80,0.4);
+  border-radius: 10px;
+  padding: 12px 20px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  z-index: 9999;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+#toolbar button {
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: none;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Segoe UI', system-ui;
+}
+.btn-save { background: #4CAF50; color: #000; }
+.btn-reset { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2) !important; }
+.btn-cancel { background: rgba(255,82,82,0.2); color: #FF5252; border: 1px solid rgba(255,82,82,0.3) !important; }
+#toolbar .title { font-size: 13px; font-weight: 800; color: #4CAF50; }
+#toolbar .hint { font-size: 10px; color: rgba(255,255,255,0.5); max-width: 200px; }
+</style>
+</head>
+<body>
+
+<div id="toolbar">
+  <span class="title">CALIBRATION MODE</span>
+  <span class="hint">Drag zones to match the casino layout. Resize with bottom-right handle.</span>
+  <button class="btn-save" onclick="saveZones()">Save & Apply</button>
+  <button class="btn-reset" onclick="resetZones()">Reset</button>
+  <button class="btn-cancel" onclick="window.close()">Cancel</button>
+</div>
+
+<script>
+const ZONES = {
+  FACE:         { color: '#4CAF50', x: 0.40, y: 0.10, w: 0.15, h: 0.15, label: 'DEALER FACE' },
+  MESA:         { color: '#42A5F5', x: 0.18, y: 0.50, w: 0.64, h: 0.16, label: 'MESA (dealer + community)' },
+  'TUS CARTAS': { color: '#FF4444', x: 0.00, y: 0.78, w: 0.24, h: 0.14, label: 'TUS CARTAS' },
+  SHOE:         { color: '#E91E9E', x: 0.75, y: 0.48, w: 0.20, h: 0.14, label: 'SHOE' },
+  BALANCE:      { color: '#9C27B0', x: 0.00, y: 0.95, w: 0.12, h: 0.05, label: 'BALANCE' },
+};
+
+const W = window.innerWidth;
+const H = window.innerHeight;
+
+// Load saved zones if any
+try {
+  const saved = localStorage.getItem('aiinpeter_zones');
+  if (saved) {
+    const parsed = JSON.parse(saved);
+    for (const [name, data] of Object.entries(parsed)) {
+      if (ZONES[name]) {
+        ZONES[name].x = data.x;
+        ZONES[name].y = data.y;
+        ZONES[name].w = data.w;
+        ZONES[name].h = data.h;
+      }
+    }
+  }
+} catch(e) {}
+
+function createZone(name, cfg) {
+  const el = document.createElement('div');
+  el.className = 'zone';
+  el.dataset.name = name;
+  el.style.borderColor = cfg.color;
+  el.style.background = cfg.color.replace(')', ',0.08)').replace('rgb', 'rgba');
+  el.style.left = (cfg.x * W) + 'px';
+  el.style.top = (cfg.y * H) + 'px';
+  el.style.width = (cfg.w * W) + 'px';
+  el.style.height = (cfg.h * H) + 'px';
+
+  const label = document.createElement('div');
+  label.className = 'label';
+  label.style.background = cfg.color;
+  label.style.color = '#000';
+  label.textContent = cfg.label;
+  el.appendChild(label);
+
+  const coords = document.createElement('div');
+  coords.className = 'coords';
+  el.appendChild(coords);
+
+  const handle = document.createElement('div');
+  handle.className = 'handle';
+  handle.style.borderColor = cfg.color;
+  el.appendChild(handle);
+
+  // Drag to move
+  let dragging = false, resizing = false, startX, startY, startL, startT, startW, startH;
+
+  el.addEventListener('mousedown', (e) => {
+    if (e.target === handle) return;
+    dragging = true;
+    startX = e.clientX; startY = e.clientY;
+    startL = el.offsetLeft; startT = el.offsetTop;
+    e.preventDefault();
+  });
+
+  handle.addEventListener('mousedown', (e) => {
+    resizing = true;
+    startX = e.clientX; startY = e.clientY;
+    startW = el.offsetWidth; startH = el.offsetHeight;
+    e.preventDefault();
+    e.stopPropagation();
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (dragging) {
+      el.style.left = Math.max(0, Math.min(W - el.offsetWidth, startL + e.clientX - startX)) + 'px';
+      el.style.top = Math.max(0, Math.min(H - el.offsetHeight, startT + e.clientY - startY)) + 'px';
+      updateCoords(el, coords);
+    }
+    if (resizing) {
+      el.style.width = Math.max(40, startW + e.clientX - startX) + 'px';
+      el.style.height = Math.max(30, startH + e.clientY - startY) + 'px';
+      updateCoords(el, coords);
+    }
+  });
+
+  document.addEventListener('mouseup', () => { dragging = false; resizing = false; });
+
+  updateCoords(el, coords);
+  document.body.appendChild(el);
+  return el;
+}
+
+function updateCoords(el, coordsEl) {
+  const x = (el.offsetLeft / W).toFixed(2);
+  const y = (el.offsetTop / H).toFixed(2);
+  const w = (el.offsetWidth / W).toFixed(2);
+  const h = (el.offsetHeight / H).toFixed(2);
+  coordsEl.textContent = `${x}, ${y} | ${w}x${h}`;
+}
+
+function getZoneData() {
+  const data = {};
+  document.querySelectorAll('.zone').forEach(el => {
+    data[el.dataset.name] = {
+      x: parseFloat((el.offsetLeft / W).toFixed(4)),
+      y: parseFloat((el.offsetTop / H).toFixed(4)),
+      w: parseFloat((el.offsetWidth / W).toFixed(4)),
+      h: parseFloat((el.offsetHeight / H).toFixed(4)),
+    };
+  });
+  return data;
+}
+
+function saveZones() {
+  const data = getZoneData();
+  localStorage.setItem('aiinpeter_zones', JSON.stringify(data));
+
+  // Send to backend
+  const ws = new WebSocket('ws://localhost:8765/ws');
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ type: 'calibrate_zones', payload: data }));
+    document.querySelector('.btn-save').textContent = 'Saved!';
+    document.querySelector('.btn-save').style.background = '#FFD740';
+    setTimeout(() => window.close(), 1000);
+  };
+  ws.onerror = () => {
+    // Save locally even if backend not running
+    document.querySelector('.btn-save').textContent = 'Saved locally!';
+    setTimeout(() => window.close(), 1000);
+  };
+}
+
+function resetZones() {
+  document.querySelectorAll('.zone').forEach(el => el.remove());
+  localStorage.removeItem('aiinpeter_zones');
+  // Re-create with defaults
+  for (const [name, cfg] of Object.entries(ZONES)) {
+    cfg.x = { FACE: 0.40, MESA: 0.18, 'TUS CARTAS': 0.00, SHOE: 0.75, BALANCE: 0.00 }[name];
+    cfg.y = { FACE: 0.10, MESA: 0.50, 'TUS CARTAS': 0.78, SHOE: 0.48, BALANCE: 0.95 }[name];
+    cfg.w = { FACE: 0.15, MESA: 0.64, 'TUS CARTAS': 0.24, SHOE: 0.20, BALANCE: 0.12 }[name];
+    cfg.h = { FACE: 0.15, MESA: 0.16, 'TUS CARTAS': 0.14, SHOE: 0.14, BALANCE: 0.05 }[name];
+    createZone(name, cfg);
+  }
+}
+
+// Create zones
+for (const [name, cfg] of Object.entries(ZONES)) {
+  createZone(name, cfg);
+}
+</script>
+</body>
+</html>
